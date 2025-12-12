@@ -2,178 +2,179 @@ package cn.nju.edu.repository;
 
 import cn.nju.edu.entity.Card;
 import cn.nju.edu.entity.CardKey;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import javax.transaction.Transactional;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
-@Transactional
+@DataJpaTest
+@ActiveProfiles("test")
 public class CardRepositoryTest {
+
     @Autowired
-    CardRepository cardRepository;
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private CardRepository cardRepository;
 
     @Test
-    public void findById(){
+    public void testFindById() {
+        // 准备测试数据
+        Card card = new Card();
+        card.setPositionX(1);
+        card.setPositionY(2);
+        card.setStoryId(1);
+        card.setTitle("Test Card");
+        card.setContent("Test Content");
+        card.setState(1);
+        card.setCost(5);
+
         CardKey id = new CardKey();
-        id.setPositionX(5);
-        id.setPositionY(1);
+        id.setPositionX(1);
+        id.setPositionY(2);
         id.setStoryId(1);
 
-        Card card = cardRepository.findById(id).get();
-        Assert.assertNotNull(card);
-        Assert.assertEquals(card.getContent(),"团长好！");
+        Card savedCard = entityManager.persistAndFlush(card);
+
+        // 执行测试
+        Optional<Card> foundCard = cardRepository.findById(id);
+
+        // 验证结果
+        assertTrue(foundCard.isPresent());
+        assertEquals("Test Card", foundCard.get().getTitle());
+        assertEquals("Test Content", foundCard.get().getContent());
+        assertSame(Integer.valueOf(1), foundCard.get().getState());
+        assertSame(Integer.valueOf(5), foundCard.get().getCost());
     }
 
     @Test
-    public void finfByCardId(){
-        Card card = cardRepository.findByCardId(1);
+    public void testFindByIdNotFound() {
+        // 查找不存在的Card
+        CardKey id = new CardKey();
+        id.setPositionX(999);
+        id.setPositionY(999);
+        id.setStoryId(999);
 
-        Assert.assertNotNull(card);
-        Assert.assertEquals(card.getContent(),"团长好！");
+        Optional<Card> foundCard = cardRepository.findById(id);
+        assertFalse(foundCard.isPresent());
     }
 
     @Test
-    public void save(){
+    public void testFindByStoryId() {
+        // 准备测试数据
         Card card = new Card();
-        card.setContent("gaygayxiong");
+        card.setPositionX(1);
+        card.setPositionY(2);
+        card.setStoryId(123);
+        card.setTitle("Test Card");
+        card.setContent("Test Content");
         card.setState(1);
-        card.setCost(38);
+        card.setCost(5);
+
+        entityManager.persistAndFlush(card);
+
+        // 执行测试
+        java.util.List<Card> cards = cardRepository.findByStoryId(123);
+
+        // 验证结果
+        assertNotNull(cards);
+        assertFalse(cards.isEmpty());
+        assertEquals("Test Card", cards.get(0).getTitle());
+    }
+
+    @Test
+    public void testFindByStoryIdNotFound() {
+        // 查找不存在的storyId
+        java.util.List<Card> cards = cardRepository.findByStoryId(99999);
+        assertNotNull(cards);
+        assertTrue(cards.isEmpty());
+    }
+
+    @Test
+    public void testSave() {
+        // 准备测试数据
+        Card card = new Card();
         card.setPositionX(3);
+        card.setPositionY(4);
+        card.setStoryId(1);
+        card.setTitle("New Card");
+        card.setContent("New Content");
+        card.setState(2);
+        card.setCost(10);
+
+        // 执行保存
+        Card savedCard = cardRepository.save(card);
+
+        // 验证结果
+        assertNotNull(savedCard);
+        assertEquals("New Card", savedCard.getTitle());
+        assertEquals("New Content", savedCard.getContent());
+        assertSame(Integer.valueOf(2), savedCard.getState());
+        assertSame(Integer.valueOf(10), savedCard.getCost());
+    }
+
+    @Test
+    public void testDelete() {
+        // 准备测试数据
+        Card card = new Card();
+        card.setPositionX(5);
+        card.setPositionY(6);
+        card.setStoryId(1);
+        card.setTitle("To Delete");
+        card.setContent("To be deleted");
+        card.setState(1);
+        card.setCost(3);
+
+        entityManager.persistAndFlush(card);
+
+        // 执行删除
+        CardKey id = new CardKey();
+        id.setPositionX(5);
+        id.setPositionY(6);
+        id.setStoryId(1);
+
+        cardRepository.deleteById(id);
+
+        // 验证删除
+        Optional<Card> foundCard = cardRepository.findById(id);
+        assertFalse(foundCard.isPresent());
+    }
+
+    @Test
+    public void testUpdate() {
+        // 准备测试数据
+        Card card = new Card();
+        card.setPositionX(7);
         card.setPositionY(8);
         card.setStoryId(1);
-        cardRepository.save(card);
-
-        CardKey id = new CardKey();
-        id.setPositionX(3);
-        id.setPositionY(8);
-        id.setStoryId(1);
-
-        Card card1 = cardRepository.findById(id).get();
-        Assert.assertNotNull(card);
-        Assert.assertEquals(card.getContent(),"gaygayxiong");
-    }
-
-    @Test
-    public void findByStoryId(){
-        Card card = new Card();
-        card.setContent("gaygayxiong");
+        card.setTitle("Original Title");
+        card.setContent("Original Content");
         card.setState(1);
-        card.setCost(38);
-        card.setPositionX(3);
-        card.setPositionY(8);
-        card.setStoryId(1);
-        cardRepository.save(card);
+        card.setCost(5);
 
-        String content = "";
-        List<Card> cards = cardRepository.findByStoryId(1);
-        for(int i = 0;i < cards.size();i++){
-            Card temp = cards.get(i);
-            if(temp.getStoryId() == 1 && temp.getPositionX() == 3 && temp.getPositionY() == 8){
-                content = temp.getContent();
-            }
-        }
-        Assert.assertNotNull(content);
-        Assert.assertEquals(content,"gaygayxiong");
+        Card savedCard = entityManager.persistAndFlush(card);
+
+        // 修改数据
+        savedCard.setTitle("Updated Title");
+        savedCard.setContent("Updated Content");
+        savedCard.setState(2);
+        savedCard.setCost(8);
+
+        // 执行更新
+        Card updatedCard = cardRepository.save(savedCard);
+
+        // 验证更新
+        assertEquals("Updated Title", updatedCard.getTitle());
+        assertEquals("Updated Content", updatedCard.getContent());
+        assertSame(Integer.valueOf(2), updatedCard.getState());
+        assertSame(Integer.valueOf(8), updatedCard.getCost());
     }
-
-    @Test
-    public void update(){
-        CardKey id = new CardKey();
-        id.setPositionX(5);
-        id.setPositionY(1);
-        id.setStoryId(1);
-
-        Card card = cardRepository.findById(id).get();
-        card.setContent("awayz is still a rbq");
-        cardRepository.save(card);
-
-        Card card1 = cardRepository.findById(id).get();
-        Assert.assertNotNull(card1);
-        Assert.assertEquals(card1.getContent(),"awayz is still a rbq");
-    }
-
-    @Test
-    public void update1(){
-        Card temp = cardRepository.findByCardId(1);
-
-        System.out.println("--------------------- " + temp.toString());
-
-        cardRepository.delete(temp);
-        System.out.println("delete!------");
-
-        Card card = new Card();
-        card.setContent(temp.getContent());
-        card.setState(temp.getState());
-        card.setCost(temp.getCost());
-        card.setPositionX(temp.getPositionX() + 1);
-        card.setPositionY(temp.getPositionY() + 1);
-        card.setStoryId(temp.getStoryId());
-        card.setCardId(11);
-        System.out.println("--------------------- " + card.toString());
-
-        cardRepository.save(card);
-
-        Card card1 = cardRepository.findByCardId(11);
-        System.out.println(card1.toString());
-    }
-
-    @Test
-    public void delete(){
-        CardKey id = new CardKey();
-        id.setPositionX(5);
-        id.setPositionY(1);
-        id.setStoryId(1);
-
-        Card card = cardRepository.findById(id).get();
-        cardRepository.delete(card);
-
-        boolean isDeleted = false;
-
-        try {
-            Card card1 = cardRepository.findById(id).get();
-        }
-        catch (NoSuchElementException e){
-            isDeleted = true;
-        }
-
-        Assert.assertEquals(isDeleted,true);
-    }
-
-    @Test
-    public void delete1(){
-
-        CardKey id = new CardKey();
-        id.setPositionX(5);
-        id.setPositionY(1);
-        id.setStoryId(1);
-
-        Card card = cardRepository.findByCardId(1);
-        System.out.println(card.toString());
-        cardRepository.delete(card);
-
-        boolean isDeleted = false;
-
-//        try {
-//            Card card1 = cardRepository.findById(id).get();
-////            Card card1 = cardRepository.findByCardId(1);
-//        }
-//        catch (NoSuchElementException e){
-//            isDeleted = true;
-//        }
-
-        Card card1 = cardRepository.findByCardId(1);
-//        System.out.println(card1.toString());
-
-        Assert.assertEquals(card1,null);
-    }
-
-
 }

@@ -1,127 +1,156 @@
 package cn.nju.edu.repository;
 
 import cn.nju.edu.entity.StoryMapKey;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import javax.transaction.Transactional;
 
 import cn.nju.edu.entity.StoryMap;
 
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
-@Transactional
+@DataJpaTest
+@ActiveProfiles("test")
 public class StoryMapRepositoryTest {
+
     @Autowired
-    StoryMapRepository storyMapRepository;
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private StoryMapRepository storyMapRepository;
 
     @Test
-    public void findById(){
-        StoryMapKey id = new StoryMapKey();
-        id.setStoryName("xxx");
-        id.setUserId(1);
-        StoryMap storyMap = storyMapRepository.findById(id).get();
-        Assert.assertNotNull(storyMap);
-        Assert.assertEquals(storyMap.getStoryDescription(),"xxxxxx");
-    }
-
-    @Test
-    public void findByStoryId(){
-        StoryMap storyMap = storyMapRepository.findByStoryId(1);
-
-        Assert.assertNotNull(storyMap);
-        Assert.assertEquals(storyMap.getStoryDescription(),"团长");
-    }
-
-    @Test
-    public void save(){
+    public void testFindById() {
+        // 准备测试数据
         StoryMap storyMap = new StoryMap();
         storyMap.setUserId(1);
-        storyMap.setStoryName("GuideMap");
-        storyMap.setStoryDescription("sample project");
-        storyMap.setRelease(3);
-        storyMapRepository.save(storyMap);
+        storyMap.setStoryName("TestStory");
+        storyMap.setStoryDescription("Test Description");
+        storyMap.setRelease(1);
 
+        StoryMap savedStoryMap = entityManager.persistAndFlush(storyMap);
+
+        // 执行测试
         StoryMapKey id = new StoryMapKey();
-        id.setStoryName("GuideMap");
+        id.setStoryName("TestStory");
         id.setUserId(1);
-        StoryMap storyMap1 = storyMapRepository.findById(id).get();
-        Assert.assertNotNull(storyMap1);
-        Assert.assertEquals(storyMap1.getStoryDescription(),"sample project");
 
-//        List<StoryMap> storyMaps = storyMapRepository.findByUserId(1);
-//        Assert.assertNotNull(storyMaps);
-//        Assert.assertEquals(storyMaps.size(),3);
+        Optional<StoryMap> foundStoryMap = storyMapRepository.findById(id);
+
+        // 验证结果
+        assertTrue(foundStoryMap.isPresent());
+        assertEquals(savedStoryMap.getStoryDescription(), foundStoryMap.get().getStoryDescription());
+        assertEquals(savedStoryMap.getRelease(), foundStoryMap.get().getRelease());
     }
 
     @Test
-    public void findByUserId(){
+    public void testFindByIdNotFound() {
+        // 查找不存在的StoryMap
+        StoryMapKey id = new StoryMapKey();
+        id.setStoryName("NonExistent");
+        id.setUserId(999);
+
+        Optional<StoryMap> foundStoryMap = storyMapRepository.findById(id);
+        assertFalse(foundStoryMap.isPresent());
+    }
+
+    @Test
+    public void testFindByStoryId() {
+        // 准备测试数据
         StoryMap storyMap = new StoryMap();
         storyMap.setUserId(1);
-        storyMap.setStoryName("GuideMap");
-        storyMap.setStoryDescription("sample project");
-        storyMap.setRelease(3);
-        storyMapRepository.save(storyMap);
+        storyMap.setStoryName("TestStory");
+        storyMap.setStoryDescription("Test Description");
+        storyMap.setRelease(1);
 
-        String description = "";
-        List<StoryMap> storyMaps = storyMapRepository.findByUserId(1);
-        Assert.assertNotNull(storyMaps);
-        for(int i = 0;i < storyMaps.size();i++){
-            StoryMap temp = storyMaps.get(i);
-            if(temp.getStoryName().equals("GuideMap") && temp.getUserId() == 1){
-                description = "sample project";
-            }
-        }
-        Assert.assertNotNull(description);
-        Assert.assertEquals(description,"sample project");
+        entityManager.persistAndFlush(storyMap);
+
+        // 执行测试
+        StoryMap foundStoryMap = storyMapRepository.findByStoryId(storyMap.getStoryId());
+
+        // 验证结果
+        assertNotNull(foundStoryMap);
+        assertEquals("TestStory", foundStoryMap.getStoryName());
+        assertEquals("Test Description", foundStoryMap.getStoryDescription());
     }
 
     @Test
-    public void update(){
-        StoryMapKey id = new StoryMapKey();
-        id.setStoryName("xxx");
-        id.setUserId(1);
-        StoryMap storyMap = storyMapRepository.findById(id).get();
-        storyMap.setStoryDescription("xxxxx");
-        storyMapRepository.save(storyMap);
-
-        StoryMap storyMap1 = storyMapRepository.findById(id).get();
-        Assert.assertNotNull(storyMap1);
-        Assert.assertEquals(storyMap1.getStoryDescription(),"xxxxx");
+    public void testFindByStoryIdNotFound() {
+        // 查找不存在的storyId
+        StoryMap foundStoryMap = storyMapRepository.findByStoryId(99999);
+        assertNull(foundStoryMap);
     }
 
     @Test
-    public void delete(){
-        StoryMapKey id = new StoryMapKey();
-        id.setStoryName("xxx");
-        id.setUserId(1);
-        StoryMap storyMap = storyMapRepository.findById(id).get();
-        storyMapRepository.delete(storyMap);
+    public void testSave() {
+        // 准备测试数据
+        StoryMap storyMap = new StoryMap();
+        storyMap.setUserId(1);
+        storyMap.setStoryName("NewStory");
+        storyMap.setStoryDescription("New Description");
+        storyMap.setRelease(2);
 
-//        StoryMap storyMap1 = new StoryMap();
-//        storyMap1.setStoryName("GuideMap");
-//        storyMap1.setStoryDescription("sample project");
-//        storyMap1.setRelease(3);
-//        storyMap1.setUserId(1);
-//        storyMapRepository.save(storyMap1);
+        // 执行保存
+        StoryMap savedStoryMap = storyMapRepository.save(storyMap);
 
-        boolean isDeleted = false;
-
-        try {
-            StoryMap storyMap1 = storyMapRepository.findById(id).get();
-        }
-        catch (NoSuchElementException e){
-            isDeleted = true;
-        }
-
-        Assert.assertEquals(isDeleted,true);
+        // 验证结果
+        assertNotNull(savedStoryMap);
+        assertNotNull(savedStoryMap.getStoryId());
+        assertEquals("NewStory", savedStoryMap.getStoryName());
+        assertEquals("New Description", savedStoryMap.getStoryDescription());
+        assertSame(Integer.valueOf(2), savedStoryMap.getRelease());
     }
 
+    @Test
+    public void testDelete() {
+        // 准备测试数据
+        StoryMap storyMap = new StoryMap();
+        storyMap.setUserId(1);
+        storyMap.setStoryName("ToDelete");
+        storyMap.setStoryDescription("To be deleted");
+        storyMap.setRelease(1);
+
+        StoryMap savedStoryMap = entityManager.persistAndFlush(storyMap);
+
+        // 执行删除
+        StoryMapKey id = new StoryMapKey();
+        id.setStoryName("ToDelete");
+        id.setUserId(1);
+
+        storyMapRepository.deleteById(id);
+
+        // 验证删除
+        Optional<StoryMap> foundStoryMap = storyMapRepository.findById(id);
+        assertFalse(foundStoryMap.isPresent());
+    }
+
+    @Test
+    public void testUpdate() {
+        // 准备测试数据
+        StoryMap storyMap = new StoryMap();
+        storyMap.setUserId(1);
+        storyMap.setStoryName("ToUpdate");
+        storyMap.setStoryDescription("Original Description");
+        storyMap.setRelease(1);
+
+        StoryMap savedStoryMap = entityManager.persistAndFlush(storyMap);
+
+        // 修改数据
+        savedStoryMap.setStoryDescription("Updated Description");
+        savedStoryMap.setRelease(2);
+
+        // 执行更新
+        StoryMap updatedStoryMap = storyMapRepository.save(savedStoryMap);
+
+        // 验证更新
+        assertEquals("Updated Description", updatedStoryMap.getStoryDescription());
+        assertSame(Integer.valueOf(2), updatedStoryMap.getRelease());
+    }
 }

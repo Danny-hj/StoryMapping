@@ -402,6 +402,29 @@ public class UserServiceTest {
         assertEquals("新密码登录应该成功", userId, newLoginUserId);
     }
 
+    @Test
+    public void testPasswordIsHashedAndNotReturned() {
+        UserVo userVo = createTestUser();
+        String uniqueUsername = "hashuser_" + UUID.randomUUID().toString().replace("-", "");
+        userVo.setName(uniqueUsername);
+
+        int userId = userService.addUser(userVo);
+        assertTrue("添加用户应该成功", userId > 0);
+
+        UserVo loaded = userService.getUserById(userId);
+        assertNotNull(loaded);
+        assertEquals(uniqueUsername, loaded.getName());
+        assertNull("查询用户时不应返回密码", loaded.getPassword());
+
+        UserLoginVo loginVo = new UserLoginVo();
+        loginVo.setName(uniqueUsername);
+        loginVo.setPassword("password");
+        assertEquals("正确密码应该可以登录", userId, userService.getUserByNameAndPassword(loginVo));
+
+        loginVo.setPassword("not-the-password");
+        assertEquals("错误密码应该登录失败", 0, userService.getUserByNameAndPassword(loginVo));
+    }
+
     private UserVo createTestUser() {
         UserVo userVo = new UserVo();
         userVo.setName("testuser");

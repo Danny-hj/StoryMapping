@@ -7,16 +7,20 @@ import cn.nju.edu.repository.CardRepository;
 import cn.nju.edu.service.CardService;
 import cn.nju.edu.vo.CardVo;
 import cn.nju.edu.entity.Card;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @Transactional
 public class CardServiceImpl implements CardService {
+
+    private static final Logger log = LoggerFactory.getLogger(CardServiceImpl.class);
 
     @Autowired
     private CardRepository cardRepository;
@@ -83,7 +87,7 @@ public class CardServiceImpl implements CardService {
                         card1.setPositionY(temp.getPositionY() + 1);
                         card1.setStoryId(temp.getStoryId());
                         card1.setCardId(temp.getCardId());
-                        System.out.println("--------------------- " + card1.toString());
+                        log.debug("--------------------- " + card1.toString());
                         toSave.add(card1);
 
                         Card card3 = new Card();
@@ -110,7 +114,7 @@ public class CardServiceImpl implements CardService {
                     card2.setPositionY(temp.getPositionY());
                     card2.setStoryId(temp.getStoryId());
                     card2.setCardId(temp.getCardId());
-                    System.out.println("--------------------- " + card2.toString());
+                    log.debug("--------------------- " + card2.toString());
                     toSave.add(card2);
 
                     Card card3 = new Card();
@@ -128,18 +132,18 @@ public class CardServiceImpl implements CardService {
         }
 
         for(Card temp : toDelete){
-            System.out.println("delete: " + temp.toString());
+            log.debug("delete: " + temp.toString());
         }for(Card temp : toSave){
-            System.out.println("save: " + temp.toString());
+            log.debug("save: " + temp.toString());
         }
 
         for(Card temp : toDelete){
-            System.out.println("deleting: " + temp.toString());
+            log.debug("deleting: " + temp.toString());
             cardRepository.delete(temp);
             cardRepository.flush();
         }for(Card temp : toSave){
-            System.out.println("saving: " + temp.toString());
-            cardRepository.saveAndFlush(temp);
+            log.debug("saving: " + temp.toString());
+            saveCard(temp);
         }
 //        cardRepository.deleteAll(toUpdate);
 //        cardRepository.saveAll(toUpdate);
@@ -152,8 +156,8 @@ public class CardServiceImpl implements CardService {
         card.setPositionX(x);
         card.setPositionY(y);
         card.setStoryId(id);
-        System.out.println("--------------------- " + card.toString());
-        cardRepository.saveAndFlush(card);
+        log.debug("--------------------- " + card.toString());
+        saveCard(card);
         return true;
     }
 
@@ -161,10 +165,10 @@ public class CardServiceImpl implements CardService {
     public boolean updateCard(CardVo cardVo) {
 //        Card temp = cardRepository.findByCardId(cardVo.getCardId());
 
-//        System.out.println("--------------------- " + temp.toString());
+//        log.debug("--------------------- " + temp.toString());
 
         cardRepository.deleteByCardId(cardVo.getCardId());
-        System.out.println("delete!------");
+        log.debug("delete!------");
 
         Card card = new Card();
         card.setTitle(cardVo.getTitle());
@@ -175,9 +179,9 @@ public class CardServiceImpl implements CardService {
         card.setPositionY(cardVo.getPositionY());
         card.setStoryId(cardVo.getStoryId());
         card.setCardId(cardVo.getCardId());
-        System.out.println("--------------------- " + card.toString());
+        log.debug("--------------------- " + card.toString());
 
-        cardRepository.saveAndFlush(card);
+        saveCard(card);
         return true;
     }
 
@@ -207,7 +211,7 @@ public class CardServiceImpl implements CardService {
             card.setPositionY(cardVo.getPositionY());
             card.setStoryId(cardVo.getStoryId());
             card.setCardId(cardVo.getCardId());
-            cardRepository.saveAndFlush(card);
+            saveCard(card);
         }
         return true;
     }
@@ -259,10 +263,10 @@ public class CardServiceImpl implements CardService {
                     }
                 }
                 if(will_delete == true){
-                    System.out.println("bias :" + (temp.getPositionY() - y + 1));
+                    log.debug("bias :" + (temp.getPositionY() - y + 1));
                     if(temp.getPositionY() - y  + 1 > left_move){
                         left_move = temp.getPositionY() - y + 1;
-                        System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=leftmove: " + left_move);
+                        log.debug("-=-=-=-=-=-=-=-=-=-=-=-=-=leftmove: " + left_move);
                     }
                     Card card1 = new Card();
                     card1.setPositionX(temp.getPositionX());
@@ -288,8 +292,8 @@ public class CardServiceImpl implements CardService {
                     cardRepository.delete(card1);
                     cardRepository.flush();
                     temp.setPositionY(temp.getPositionY() - left_move);
-                    System.out.println("left_move: " + left_move);
-                    System.out.println("update here! " + temp.toString());
+                    log.debug("left_move: " + left_move);
+                    log.debug("update here! " + temp.toString());
                     toAdd.add(temp);
                 }
             }
@@ -303,12 +307,20 @@ public class CardServiceImpl implements CardService {
                 card1.setPositionY(temp.getPositionY());
                 card1.setStoryId(temp.getStoryId());
                 card1.setCardId(temp.getCardId());
-                cardRepository.saveAndFlush(card1);
+                saveCard(card1);
             }
         }
 
 
         return true;
+    }
+
+    private void saveCard(Card card) {
+        if (card.getCardId() == 0) {
+            Integer maxCardId = cardRepository.maxCardId();
+            card.setCardId((maxCardId == null ? 0 : maxCardId) + 1);
+        }
+        cardRepository.saveAndFlush(card);
     }
 
 }

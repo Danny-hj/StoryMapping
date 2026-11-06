@@ -1,6 +1,6 @@
 package cn.nju.edu.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "role_card_relation")

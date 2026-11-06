@@ -2,7 +2,10 @@ package cn.nju.edu.util;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
@@ -14,6 +17,8 @@ import java.util.List;
  */
 @Component
 public class ExcelHelper {
+
+    private static final Logger log = LoggerFactory.getLogger(ExcelHelper.class);
 
     public static final String XLS = "xls";
     public static final String XLSX = "xlsx";
@@ -39,7 +44,7 @@ public class ExcelHelper {
             this.file = file;
             is.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn("Failed to open workbook {}", file, e);
             return null;
         }
         return workbook;
@@ -100,31 +105,43 @@ public class ExcelHelper {
      */
     public void writeExcel(List<String[]> content, String dir) {
         Workbook wb = new XSSFWorkbook();
-        Sheet sheet = wb.createSheet();
-        for (int i = 0; i < content.size(); i++) {
-            Row row = sheet.createRow(i);
-            System.out.println("i " + i);
-            String[] rowContent = content.get(i);
-            for (int j = 0; j < rowContent.length; j++) {
-                System.out.println(j + " " + rowContent[j]);
-                Cell cell = row.createCell(j);
-                cell.setCellValue(rowContent[j]);
+        try {
+            Sheet sheet = wb.createSheet();
+            for (int i = 0; i < content.size(); i++) {
+                Row row = sheet.createRow(i);
+                String[] rowContent = content.get(i);
+                if (rowContent == null) {
+                    continue;
+                }
+                for (int j = 0; j < rowContent.length; j++) {
+                    Cell cell = row.createCell(j);
+                    cell.setCellValue(rowContent[j] == null ? "" : rowContent[j]);
+                }
+            }
+            File output = new File(dir);
+            File parent = output.getParentFile();
+            if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                log.warn("Failed to create directory {}", parent);
+            }
+            try (FileOutputStream out = new FileOutputStream(output)) {
+                wb.write(out);
+            }
+        } catch (IOException e) {
+            log.warn("Failed to write workbook {}", dir, e);
+        } finally {
+            try {
+                wb.close();
+            } catch (IOException e) {
+                log.warn("Failed to close workbook", e);
             }
         }
-        try {
-            FileOutputStream out = new FileOutputStream(dir);
-            wb.write(out);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
     }
 
     public boolean close() {
         try {
             workbook.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn("Failed to close workbook", e);
             return false;
         }
         this.file = null;
@@ -133,22 +150,14 @@ public class ExcelHelper {
     }
 
     private String getStringCellValue(Cell cell) {
-        String value = null;
-        CellType cellTypeEnum = cell.getCellTypeEnum();
-        switch (cellTypeEnum) {
-            //把数字当成String来读，避免出现1读成1.0的情况
-            case NUMERIC:
-                cell.setCellType(CellType.STRING);
-            case STRING:
-                value = cell.getStringCellValue();
-                break;
-            case BOOLEAN:
-                value = String.valueOf(cell.getBooleanCellValue());
-                break;
-            default:
-                break;
+        CellType cellType = cell.getCellType();
+        if (cellType == CellType.BOOLEAN) {
+            return String.valueOf(cell.getBooleanCellValue());
         }
-        return value;
+        if (cellType == CellType.BLANK || cellType == CellType.ERROR) {
+            return null;
+        }
+        return new DataFormatter().formatCellValue(cell);
     }
 
     public static void main(String[] args) throws IOException {
@@ -159,6 +168,6 @@ public class ExcelHelper {
         a[2] = "4";
         List<String[]> test = new ArrayList<>();
         test.add(a);
-        excelHelper.writeExcel(test, "src/main/resources/Excel/score.xlsx");
+        excelHelper.writeExcel(test, "data/export/score.xlsx");
     }
 }

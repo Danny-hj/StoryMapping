@@ -19,7 +19,7 @@ public class UserController {
     UserService userService;
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
-    public ResponseEntity<Integer> login(@RequestBody UserVo userVo) {
+    public ResponseEntity<Integer> register(@RequestBody UserVo userVo) {
         int id  = userService.addUser(userVo);
         if (id == 0) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -28,7 +28,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public ResponseEntity<Integer> register(@RequestBody UserLoginVo userLoginVo) {
+    public ResponseEntity<Integer> login(@RequestBody UserLoginVo userLoginVo) {
         int id = userService.getUserByNameAndPassword(userLoginVo);
         if (id == 0) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -59,6 +59,10 @@ public class UserController {
 
     @RequestMapping(value = "/password/{id}", method = RequestMethod.PUT)
     public ResponseEntity updatePassword(@PathVariable("id") int userId, @RequestBody UserPswdVo userPswdVo) {
+        if (userPswdVo == null) {
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        }
+        userPswdVo.setId(userId);
         boolean flag = userService.updatePassword(userPswdVo);
         if (flag) {
             return new ResponseEntity(HttpStatus.OK);

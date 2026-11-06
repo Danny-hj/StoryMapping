@@ -7,7 +7,7 @@ import cn.nju.edu.vo.StoryRoleVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,12 +70,17 @@ public class StoryRoleServiceImpl implements StoryRoleService {
     @Override
     @Transactional
     public boolean updateStoryRole(StoryRoleVo storyRoleVo) {
-        StoryRole storyRole = new StoryRole();
-        storyRole.setRoleId(storyRoleVo.getRoleId());
-        storyRole.setRoleName(storyRoleVo.getRoleName());
-        storyRole.setRoleDetail(storyRoleVo.getRoleDetail());
-        storyRole.setStoryId(storyRoleVo.getStoryId());
-        storyRoleRepository.save(storyRole);
+        if (storyRoleVo == null) {
+            return true;
+        }
+        StoryRole existing = storyRoleRepository.findById(storyRoleVo.getRoleId()).orElse(null);
+        if (existing == null) {
+            return true;
+        }
+        existing.setRoleName(storyRoleVo.getRoleName());
+        existing.setRoleDetail(storyRoleVo.getRoleDetail());
+        existing.setStoryId(storyRoleVo.getStoryId());
+        storyRoleRepository.save(existing);
         return true;
     }
 }

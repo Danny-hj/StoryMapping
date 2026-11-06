@@ -8,9 +8,10 @@ import cn.nju.edu.vo.UserLoginVo;
 import cn.nju.edu.vo.UserPswdVo;
 import cn.nju.edu.vo.UserVo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,16 +21,26 @@ public class UserServiceImpl implements UserService {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
     @Override
     @Transactional
     public int getUserByNameAndPassword(UserLoginVo userLoginVo) {
+        if (userLoginVo == null) {
+            return 0;
+        }
         String name = userLoginVo.getName();
         String password = userLoginVo.getPassword();
+        if (name == null || password == null) {
+            return 0;
+        }
         User user = userRepository.findByName(name);
-        if (user != null) {
-            if (name.equals(user.getName()) && password.equals(user.getPassword())) {
-                return user.getId();
-            }
+        if (user == null || user.getPassword() == null) {
+            return 0;
+        }
+        if (name.equals(user.getName()) && passwordEncoder.matches(password, user.getPassword())) {
+            return user.getId();
         }
         return 0;
     }
@@ -37,6 +48,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserVo getUserByName(String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
         User user = userRepository.findByName(name);
         return getUserVo(user);
     }
@@ -55,7 +69,6 @@ public class UserServiceImpl implements UserService {
         UserVo userVo = new UserVo();
         userVo.setId(user.getId());
         userVo.setName(user.getName());
-        userVo.setPassword(user.getPassword());
         userVo.setNickname(user.getNickname());
         userVo.setEmail(user.getEmail());
         return userVo;
@@ -64,52 +77,60 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public int addUser(UserVo userVo) {
-        User user = new User();
-        if (userVo.getName().isEmpty() || userVo.getPassword().isEmpty()) {
+        if (userVo == null || userVo.getName() == null || userVo.getName().isEmpty()
+                || userVo.getPassword() == null || userVo.getPassword().isEmpty()) {
             return 0;
         }
+        if (userRepository.findByName(userVo.getName()) != null) {
+            return 0;
+        }
+        User user = new User();
         user.setName(userVo.getName());
-        user.setPassword(userVo.getPassword());
+        user.setPassword(passwordEncoder.encode(userVo.getPassword()));
         user.setNickname(userVo.getNickname());
         user.setEmail(userVo.getEmail());
         userRepository.save(user);
-        int id = userRepository.findByName(user.getName()).getId();
-        return id;
+        return userRepository.findByName(user.getName()).getId();
     }
 
     @Override
     @Transactional
     public boolean updateUser(UserVo userVo) {
-        User user = new User();
-        int id = userVo.getId();
-        if (id == 0 || userVo.getNickname().isEmpty()) {
+        if (userVo == null || userVo.getNickname() == null || userVo.getNickname().isEmpty()) {
             return false;
         }
-        user.setId(id);
-        user.setName(userRepository.findById(id).orElse(new User()).getName());
-        user.setPassword(userRepository.findById(id).orElse(new User()).getPassword());
-        user.setNickname(userVo.getNickname());
-        user.setEmail(userVo.getEmail());
-        userRepository.save(user);
+        int id = userVo.getId();
+        if (id == 0) {
+            return false;
+        }
+        User existing = userRepository.findById(id).orElse(null);
+        if (existing == null) {
+            return false;
+        }
+        existing.setNickname(userVo.getNickname());
+        existing.setEmail(userVo.getEmail());
+        userRepository.save(existing);
         return true;
     }
 
     @Override
     @Transactional
     public boolean updatePassword(UserPswdVo userPswdVo) {
-        User user = new User();
-        int id = userPswdVo.getId();
-        String password = userRepository.findById(id).orElse(new User()).getPassword();
-        if (password.equals(userPswdVo.getOldPassword())) {
-            user.setId(id);
-            user.setName(userRepository.findById(id).orElse(new User()).getName());
-            user.setNickname(userRepository.findById(id).orElse(new User()).getNickname());
-            user.setEmail(userRepository.findById(id).orElse(new User()).getEmail());
-            user.setPassword(userPswdVo.getNewPassword());
-            userRepository.save(user);
-            return true;
+        if (userPswdVo == null || userPswdVo.getOldPassword() == null
+                || userPswdVo.getNewPassword() == null || userPswdVo.getNewPassword().isEmpty()) {
+            return false;
         }
-        return false;
+        int id = userPswdVo.getId();
+        User existing = userRepository.findById(id).orElse(null);
+        if (existing == null || existing.getPassword() == null) {
+            return false;
+        }
+        if (!passwordEncoder.matches(userPswdVo.getOldPassword(), existing.getPassword())) {
+            return false;
+        }
+        existing.setPassword(passwordEncoder.encode(userPswdVo.getNewPassword()));
+        userRepository.save(existing);
+        return true;
     }
 
     @Override

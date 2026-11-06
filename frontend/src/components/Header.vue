@@ -4,7 +4,7 @@
       <div class="topbar-logo topbar-btn">
         <!--<a href="/"><img src="../assets/logo.png" style="padding-left:8px;"></a>-->
         <!--<a href="/"><img src="../assets/images.jpg" style="padding-left:8px;"></a>-->
-        <i class="el-icon-success"></i>
+        <el-icon><SuccessFilled /></el-icon>
       </div>
       <div class="topbar-logos">
         <a href="/" style="color: #f9f9f9;">story-map</a>
@@ -15,19 +15,21 @@
       <div class="topbar-account topbar-btn">
         <el-dropdown trigger="click">
         <span class="el-dropdown-link userinfo-inner">
-          <i class="iconfont icon-user"></i> {{ nickname }}   <i class="el-icon-caret-bottom"></i></span>
-          <el-dropdown-menu slot="dropdown">
+          <i class="iconfont icon-user"></i> {{ nickname }}   <el-icon><CaretBottom /></el-icon></span>
+          <template #dropdown>
+          <el-dropdown-menu>
             <el-dropdown-item>
               <div @click="handleToUpdateAccount"><span style="color: #555;font-size: 14px;">个人信息</span></div>
             </el-dropdown-item>
             <el-dropdown-item>
               <div @click="handleToChangePwd"><span style="color: #555;font-size: 14px;">修改密码</span></div>
             </el-dropdown-item>
-            <el-dropdown-item divided @click.native="logout">退出登录</el-dropdown-item>
+            <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
           </el-dropdown-menu>
+          </template>
         </el-dropdown>
       </div>
-      <el-dialog title="账号信息" :visible.sync="accountFormVisible" :width="accountFormWidth">
+      <el-dialog title="账号信息" v-model="accountFormVisible" :width="accountFormWidth">
         <el-form :model="account" status-icon :rules="accountRules" ref="account">
           <el-form-item label="昵称" :label-width="accountFormLabelWidth" prop="nickname">
             <el-input v-model="account.nickname" autocomplete="off"></el-input>
@@ -36,12 +38,14 @@
             <el-input v-model="account.email" autocomplete="off"></el-input>
           </el-form-item>
         </el-form>
-        <div slot="footer" class="dialog-footer">
+        <template #footer>
+        <div class="dialog-footer">
           <el-button @click="accountFormVisible = false">取 消</el-button>
           <el-button type="primary" @click="updateAccount('account')" :loading="loading">确 定</el-button>
         </div>
+        </template>
       </el-dialog>
-      <el-dialog title="修改密码" :visible.sync="changepwdFormVisible" :width="changepwdFormWidth">
+      <el-dialog title="修改密码" v-model="changepwdFormVisible" :width="changepwdFormWidth">
         <el-form :model="pwdForm" :label-position="'left'" status-icon
                  :rules="pwdRules" ref="pwdForm">
           <el-form-item label="原密码" :label-width="changepwdFormLabelWidth" prop="old">
@@ -54,10 +58,12 @@
             <el-input type="password" v-model="pwdForm.new2" autocomplete="off"></el-input>
           </el-form-item>
         </el-form>
-        <div slot="footer" class="dialog-footer">
+        <template #footer>
+        <div class="dialog-footer">
           <el-button @click="changepwdFormVisible = false">取 消</el-button>
           <el-button type="primary" @click="handleChangePwd('pwdForm')" :loading="loading">确 定</el-button>
         </div>
+        </template>
       </el-dialog>
     </el-col>
   </el-row>

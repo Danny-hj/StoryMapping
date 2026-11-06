@@ -33,6 +33,6 @@ export default {
 
   addCollaborators: (userId, storyId) => {
     console.log(userId, storyId)
-    return API.POST('addCollaborator', { 'userId': userId, 'storyId' : storyId })
+    return API.POST('addCollaborator', { 'userId': userId, 'storyId': storyId })
   }
 }

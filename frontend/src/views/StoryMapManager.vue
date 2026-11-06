@@ -2,7 +2,7 @@
   <el-row>
     <el-col :span="6" v-for="storymap in storymaps" :key="storymap.storyId" :offset=1>
       <el-card :body-style="{ padding: '0px' }" class="storymap" shadow="never"
-               @click.native="jumpTo('storymap', storymap.storyId)">
+               @click="jumpTo('storymap', storymap.storyId)">
         <div style="padding: 10px; height: 100%">
           <h1>{{ storymap.storyName }}</h1>
           <p>
@@ -11,16 +11,16 @@
         </div>
       </el-card>
       <div class="operation">
-        <el-button icon="el-icon-delete" circle class="storymap-icon"
-                   @click="handleDeleteStoryMap(storymap.storyId)"></el-button>
-        <el-button icon="el-icon-edit" circle class="storymap-icon"
-                   @click="handleEditStoryMap(storymap.storyId)"></el-button>
-        <el-button icon="el-icon-circle-plus-outline" circle class="storymap-icon"
-                   @click="handleCollaborator(storymap.storyId)"></el-button>
+        <el-button circle class="storymap-icon"
+                   @click="handleDeleteStoryMap(storymap.storyId)"><el-icon><Delete /></el-icon></el-button>
+        <el-button circle class="storymap-icon"
+                   @click="handleEditStoryMap(storymap.storyId)"><el-icon><Edit /></el-icon></el-button>
+        <el-button circle class="storymap-icon"
+                   @click="handleCollaborator(storymap.storyId)"><el-icon><CirclePlus /></el-icon></el-button>
       </div>
     </el-col>
 
-    <el-dialog title="用户故事地图编辑" :visible.sync="editStoryMapVisible" width="30%">
+    <el-dialog title="用户故事地图编辑" v-model="editStoryMapVisible" width="30%">
       <el-form :label-position="'top'" label-width="100px" :model="storymapEdit">
         <el-form-item label="地图名称">
           <el-input v-model="storymapEdit.storyName"></el-input>
@@ -29,20 +29,20 @@
           <el-input type="textarea" v-model="storymapEdit.storyDescription"></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button @click.native="editStoryMapVisible = false">取消</el-button>
-          <el-button type="primary" @click.native="updateStoryMap">保存</el-button>
+          <el-button @click="editStoryMapVisible = false">取消</el-button>
+          <el-button type="primary" @click="updateStoryMap">保存</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
 
-    <el-dialog title="添加协作者" :visible.sync="addCollaboratorVisible" width="30%">
+    <el-dialog title="添加协作者" v-model="addCollaboratorVisible" width="30%">
       <el-form :label-position="'top'" label-width="100px" :model="collaborator">
         <el-form-item label="用户名称">
           <el-input v-model="collaborator.name"></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button @click.native="addCollaboratorVisible = false">取消</el-button>
-          <el-button type="primary" @click.native="addCollaborator">保存</el-button>
+          <el-button @click="addCollaboratorVisible = false">取消</el-button>
+          <el-button type="primary" @click="addCollaborator">保存</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -65,7 +65,7 @@ export default {
         storyDescription: '',
         release: 0,
         userId: '',
-        editor: '', // 编辑者
+        editor: '' // 编辑者
       },
       editStoryMapVisible: false,
       addCollaboratorVisible: false,

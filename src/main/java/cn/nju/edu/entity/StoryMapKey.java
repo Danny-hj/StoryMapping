@@ -1,6 +1,7 @@
 package cn.nju.edu.entity;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class StoryMapKey implements Serializable {
 
@@ -22,6 +23,23 @@ public class StoryMapKey implements Serializable {
 
     public void setUserId(int userId) {
         this.userId = userId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        StoryMapKey that = (StoryMapKey) o;
+        return userId == that.userId && Objects.equals(storyName, that.storyName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(storyName, userId);
     }
 
     @Override

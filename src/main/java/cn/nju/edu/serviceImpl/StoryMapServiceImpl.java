@@ -8,17 +8,22 @@ import cn.nju.edu.repository.CollaboratorRepository;
 import cn.nju.edu.repository.StoryMapRepository;
 import cn.nju.edu.service.StoryMapService;
 import cn.nju.edu.util.ExcelHelper;
+import cn.nju.edu.util.ExportLocations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import cn.nju.edu.vo.CollaboratorVo;
 import cn.nju.edu.vo.StoryMapVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class StoryMapServiceImpl implements StoryMapService {
+
+    private static final Logger log = LoggerFactory.getLogger(StoryMapServiceImpl.class);
 
     @Autowired
     private StoryMapRepository storyMapRepository;
@@ -82,6 +87,8 @@ public class StoryMapServiceImpl implements StoryMapService {
         storyMap.setStoryDescription(storyMapVo.getStoryDescription());
         storyMap.setRelease(storyMapVo.getRelease());
         storyMap.setUserId(storyMapVo.getUserId());
+        Integer maxStoryId = storyMapRepository.maxStoryId();
+        storyMap.setStoryId((maxStoryId == null ? 0 : maxStoryId) + 1);
         storyMapRepository.save(storyMap);
         return true;
     }
@@ -167,18 +174,12 @@ public class StoryMapServiceImpl implements StoryMapService {
         ExcelHelper excelHelper = new ExcelHelper();
 
         for(Card temp : cards){
-            System.out.println(temp.toString());
+            log.debug("{}", temp);
             sheet.get(temp.getPositionX() - 1)[temp.getPositionY() - 1] = temp.getContent();
-            System.out.println(sheet.get(temp.getPositionX() - 1)[temp.getPositionY() - 1]);
+            log.debug("{}", sheet.get(temp.getPositionX() - 1)[temp.getPositionY() - 1]);
         }
 
-        for(String[] temp : sheet){
-            for(int i = 0;i < temp.length;i++){
-                System.out.print(temp[i] + " ");
-            }
-        }
-
-        excelHelper.writeExcel(sheet, "src/main/resources/Excel/storyMap.xlsx");
+        excelHelper.writeExcel(sheet, ExportLocations.STORY_MAP_WORKBOOK);
 
         return true;
     }

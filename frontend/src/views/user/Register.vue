@@ -4,7 +4,7 @@
       <el-row>
         <el-col :span="24" class="topbar-wrap">
           <div class="topbar-logo topbar-btn">
-            <i class="el-icon-success"></i>
+            <el-icon><SuccessFilled /></el-icon>
           </div>
           <div class="topbar-logos">
             <a href="/" style="color: #f9f9f9;">story-map</a>

@@ -5,7 +5,7 @@
       <div class="topbar-logo topbar-btn">
         <!--<a href="/"><img src="../assets/logo.png" style="padding-left:8px;"></a>-->
         <!--<a href="/"><img src="../assets/images.jpg" style="padding-left:8px;"></a>-->
-        <i class="el-icon-success"></i>
+        <el-icon><SuccessFilled /></el-icon>
       </div>
       <div class="topbar-logos">
         <a href="/" style="color: #f9f9f9;">story-map</a>
@@ -18,17 +18,19 @@
                 <el-collapse-item v-for="role in roles" :key="role.roleId" :title="role.roleName" :name="role.roleId">
                   <div>
                     {{role.roleDetail}}
-                    <el-button icon="el-icon-edit" style="float: right" @click="editRole(role.roleId)" size="mini"
-                               circle></el-button>
-                    <el-button icon="el-icon-delete" style="float: right" @click="deleteRole(role.roleId)" size="mini"
-                               circle></el-button>
+                    <el-button style="float: right" @click="editRole(role.roleId)" size="small"
+                               circle><el-icon><Edit /></el-icon></el-button>
+                    <el-button style="float: right" @click="deleteRole(role.roleId)" size="small"
+                               circle><el-icon><Delete /></el-icon></el-button>
                   </div>
                 </el-collapse-item>
               </el-collapse>
             </el-tab-pane>
-            <el-button style="margin-top: 10px" icon="el-icon-plus" @click="addRole()" circle></el-button>
+            <el-button style="margin-top: 10px" @click="addRole()" circle><el-icon><Plus /></el-icon></el-button>
           </el-tabs>
-          <el-button slot="reference" icon="el-icon-myicon-user" circle></el-button>
+          <template #reference>
+          <el-button circle><i class="el-icon-myicon-user"></i></el-button>
+          </template>
         </el-popover>
         <el-popover placement="bottom" trigger="click" @hide="messageCards('')">
           <el-form :inline="true" :model="formInline" class="demo-form-inline" style="display: flex">
@@ -39,20 +41,24 @@
               <el-button type="primary" @click="messageCards(formInline.searchWords)">搜索</el-button>
             </el-form-item>
           </el-form>
-          <el-button slot="reference" icon="el-icon-search" circle></el-button>
+          <template #reference>
+          <el-button circle><el-icon><Search /></el-icon></el-button>
+          </template>
         </el-popover>
         <el-popover placement="bottom" trigger="click">
           <el-radio-group v-model="radio">
-            <el-radio label="excel">导出为XLSX格式</el-radio>
-            <el-radio label="png">导出为PNG格式</el-radio>
+            <el-radio value="excel">导出为XLSX格式</el-radio>
+            <el-radio value="png">导出为PNG格式</el-radio>
           </el-radio-group>
           <el-button style="margin-left: 30px" type="primary" @click="exportAsFile()">下载</el-button>
-          <el-button slot="reference" icon="el-icon-download" circle></el-button>
+          <template #reference>
+          <el-button circle><el-icon><Download /></el-icon></el-button>
+          </template>
         </el-popover>
-        <el-button icon="el-icon-back" circle></el-button>
+        <el-button circle><el-icon><Back /></el-icon></el-button>
       </div>
     </el-col>
-    <el-dialog title="新建角色" :visible.sync="dialogFormVisible">
+    <el-dialog title="新建角色" v-model="dialogFormVisible">
       <el-form :model="addform">
         <el-form-item label="角色名称" :label-width="formLabelWidth">
           <el-input v-model="addform.roleName" autocomplete="off"></el-input>
@@ -61,19 +67,23 @@
           <el-input v-model="addform.roleDetail" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
+      <template #footer>
+      <div class="dialog-footer">
         <el-button @click="dialogFormVisible = false">取 消</el-button>
         <el-button type="primary" @click="confirmAdd()">确 定</el-button>
       </div>
+      </template>
     </el-dialog>
-    <el-dialog title="删除确认" :visible.sync="dialogVisible" width="30%">
+    <el-dialog title="删除确认" v-model="dialogVisible" width="30%">
       <span>删除该角色？</span>
-      <span slot="footer" class="dialog-footer">
+      <template #footer>
+      <span class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="confirmDelete()">确 定</el-button>
       </span>
+      </template>
     </el-dialog>
-    <el-dialog title="编辑角色" :visible.sync="dialogEditFormVisible">
+    <el-dialog title="编辑角色" v-model="dialogEditFormVisible">
       <el-form :model="editform">
         <el-form-item label="角色名称" :label-width="formLabelWidth">
           <el-input v-model="editform.roleName" autocomplete="off"></el-input>
@@ -82,10 +92,12 @@
           <el-input v-model="editform.roleDetail" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
+      <template #footer>
+      <div class="dialog-footer">
         <el-button @click="dialogEditFormVisible = false">取 消</el-button>
         <el-button type="primary" @click="confirmEdit()">确 定</el-button>
       </div>
+      </template>
     </el-dialog>
   </el-row>
 </template>
@@ -125,7 +137,7 @@ export default {
       if (this.radio === 'excel') {
         this.downloadFile()
       } else {
-        eventBus.$emit('getImage', '')
+        eventBus.emit('getImage', '')
       }
     },
     downloadFile () {
@@ -156,7 +168,7 @@ export default {
         })
     },
     messageCards (words) {
-      eventBus.$emit('searchWords', words)
+      eventBus.emit('searchWords', words)
     },
     initStoryMapRoles () {
       API.getStoryRoleList(this.$route.params.storymapid).then(res => {
@@ -194,7 +206,7 @@ export default {
         if (status === 200) {
           this.$message.success('添加角色成功')
           this.initStoryMapRoles()
-          eventBus.$emit('updateRole', '')
+          eventBus.emit('updateRole', '')
         } else {
           this.$message.error('添加角色失败')
         }
@@ -221,7 +233,7 @@ export default {
         if (status === 200) {
           this.$message.success('更新角色成功')
           this.initStoryMapRoles()
-          eventBus.$emit('updateRole', '')
+          eventBus.emit('updateRole', '')
         } else {
           this.$message.error('更新角色失败')
         }
@@ -242,7 +254,7 @@ export default {
         if (status === 200) {
           this.$message.success('删除角色成功')
           this.initStoryMapRoles()
-          eventBus.$emit('updateRole', '')
+          eventBus.emit('updateRole', '')
         } else {
           this.$message.error('删除角色失败')
         }

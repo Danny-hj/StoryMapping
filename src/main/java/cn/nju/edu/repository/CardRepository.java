@@ -15,6 +15,9 @@ public interface CardRepository extends JpaRepository<Card, CardKey> {
 
     List<Card> findByStoryId(int storyId);
 
+    @Query("select max(c.cardId) from Card c")
+    Integer maxCardId();
+
     Card findByCardId(int cardId);
 
     @Transactional

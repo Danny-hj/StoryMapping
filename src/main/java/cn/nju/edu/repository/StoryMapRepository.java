@@ -14,6 +14,9 @@ public interface StoryMapRepository extends CrudRepository<StoryMap, StoryMapKey
 
     List<StoryMap> findByUserId(int userId);
 
+    @Query("select max(s.storyId) from StoryMap s")
+    Integer maxStoryId();
+
     StoryMap findByStoryId(int storyId);
 
     @Transactional

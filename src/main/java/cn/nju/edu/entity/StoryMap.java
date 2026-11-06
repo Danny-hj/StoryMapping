@@ -1,6 +1,6 @@
 package cn.nju.edu.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 
 @Entity
@@ -53,7 +53,6 @@ public class StoryMap implements Serializable {
         this.userId = userId;
     }
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "story_id")
     public int getStoryId() {
         return storyId;

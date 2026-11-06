@@ -2,20 +2,24 @@
   <el-row>
     <el-col :offset="1" :span="18">
       <div class="search">
-        <el-input placeholder="请输入内容" v-model="searchInput" class="input-with-select"  @keyup.enter.native="handleSearch">
-          <el-select v-model="searchSelect" slot="prepend" placeholder="请选择"
+        <el-input placeholder="请输入内容" v-model="searchInput" class="input-with-select" @keyup.enter="handleSearch">
+          <template #prepend>
+          <el-select v-model="searchSelect" placeholder="请选择"
                      style="width: 80px">
             <el-option label="名称" value="1"></el-option>
             <el-option label="描述" value="2"></el-option>
           </el-select>
-          <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
+          </template>
+          <template #append>
+          <el-button @click="handleSearch"><el-icon><Search /></el-icon></el-button>
+          </template>
         </el-input>
         <el-button @click="resetSearch" style="margin-left: 20px;">重置</el-button>
       </div>
     </el-col>
     <el-col :span="6" v-for="storymap in storymapsOnShow" :key="storymap.storyId" :offset=1>
       <el-card :body-style="{ padding: '0px' }" class="storymap" shadow="never"
-               @click.native="jumpTo('storymap', storymap.storyId)">
+               @click="jumpTo('storymap', storymap.storyId)">
         <div style="padding: 10px; height: 100%" >
           <h1>{{ storymap.storyName }}</h1>
           <p>
@@ -24,12 +28,12 @@
         </div>
       </el-card>
       <div class="operation">
-        <el-button icon="el-icon-delete" circle class="storymap-icon" @click="handleDeleteStoryMap(storymap.storyId)"></el-button>
-        <el-button icon="el-icon-edit" circle class="storymap-icon" @click="handleEditStoryMap(storymap.storyId)"></el-button>
+        <el-button circle class="storymap-icon" @click="handleDeleteStoryMap(storymap.storyId)"><el-icon><Delete /></el-icon></el-button>
+        <el-button circle class="storymap-icon" @click="handleEditStoryMap(storymap.storyId)"><el-icon><Edit /></el-icon></el-button>
       </div>
     </el-col>
 
-    <el-dialog title="用户故事地图编辑" :visible.sync="editStoryMapVisible" width="30%">
+    <el-dialog title="用户故事地图编辑" v-model="editStoryMapVisible" width="30%">
       <el-form :label-position="'top'" label-width="100px" :model="storymapEdit">
         <el-form-item label="地图名称">
           <el-input v-model="storymapEdit.storyName"></el-input>
@@ -38,8 +42,8 @@
           <el-input type="textarea" v-model="storymapEdit.storyDescription"></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button @click.native="editStoryMapVisible = false">取消</el-button>
-          <el-button type="primary" @click.native="updateStoryMap">保存</el-button>
+          <el-button @click="editStoryMapVisible = false">取消</el-button>
+          <el-button type="primary" @click="updateStoryMap">保存</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>

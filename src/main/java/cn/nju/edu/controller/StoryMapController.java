@@ -2,19 +2,24 @@ package cn.nju.edu.controller;
 
 import cn.nju.edu.service.StoryMapService;
 import cn.nju.edu.util.ExcelHelper;
+import cn.nju.edu.util.ExportLocations;
 import cn.nju.edu.vo.CollaboratorVo;
 import cn.nju.edu.vo.StoryMapVo;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -24,6 +29,7 @@ import java.util.List;
 @RestController
 public class StoryMapController {
 
+    private static final Logger log = LoggerFactory.getLogger(StoryMapController.class);
 
     @Autowired
     StoryMapService storyMapService;
@@ -65,8 +71,11 @@ public class StoryMapController {
         String filename = "storyMap.xlsx";
         try {
             ExcelHelper excelHelper = new ExcelHelper();
-            File file = new File("src/main/resources/Excel/storyMap.xlsx");
+            File file = new File(ExportLocations.STORY_MAP_WORKBOOK);
             Workbook workbook = excelHelper.openFile(file);
+            if (workbook == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
             bos = new ByteArrayOutputStream();
             workbook.write(bos);
             workbook.close();
@@ -89,11 +98,12 @@ public class StoryMapController {
                 try {
                     bos.close();
                 } catch (IOException e1) {
-                    e1.printStackTrace();
+                    log.warn("Failed to close workbook stream", e1);
                 }
             }
+            log.warn("Failed to export story map {}", storyId, e);
         }
-        return null;
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 }
 

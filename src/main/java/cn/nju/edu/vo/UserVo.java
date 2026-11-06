@@ -63,7 +63,6 @@ public class UserVo {
         return "UserVo{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", password='" + password + '\'' +
                 ", nickname='" + nickname + '\'' +
                 ", email='" + email + '\'' +
                 '}';

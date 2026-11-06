@@ -48,8 +48,12 @@ bower_components/
 dist/
 
 # local env files
+.env
 .env.local
 .env.*.local
+
+# local H2 database and generated exports
+/data/
 
 # Log files
 npm-debug.log*

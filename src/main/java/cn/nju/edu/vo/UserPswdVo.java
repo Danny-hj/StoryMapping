@@ -33,8 +33,6 @@ public class UserPswdVo {
     public String toString() {
         return "UserPswdVo{" +
                 "id=" + id +
-                ", oldPassword='" + oldPassword + '\'' +
-                ", newPassword='" + newPassword + '\'' +
                 '}';
     }
 }

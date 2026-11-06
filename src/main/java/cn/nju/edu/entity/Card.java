@@ -1,6 +1,6 @@
 package cn.nju.edu.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 
 @Entity
@@ -29,8 +29,6 @@ public class Card implements Serializable{
     @Column(name = "story_id")
     private int storyId;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "card_id")
     private int cardId;
 

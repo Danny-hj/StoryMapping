@@ -1,5 +1,4 @@
-import Vue from 'vue'
-import Router from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import Home from './views/Home.vue'
 import Header from '@/components/Header.vue'
 import MapHeader from '@/components/MapHeader.vue'
@@ -12,13 +11,11 @@ import Register from '@/views/user/Register.vue'
 import Login from '@/views/user/Login.vue'
 import SearchMap from '@/views/SearchMap.vue'
 
-Vue.use(Router)
-
-export default new Router({
+export default createRouter({
+  history: createWebHashHistory(),
   routes: [
     {
       path: '/',
-      type: 'home',
       name: 'home',
       redirect: '/storymap-manager',
       component: Home,
@@ -51,7 +48,6 @@ export default new Router({
     },
     {
       path: '/storymap',
-      type: 'storymap',
       name: 'storymap',
       component: StoryMap,
       children: [
@@ -66,23 +62,13 @@ export default new Router({
     },
     {
       path: '/register',
-      type: 'register',
       name: 'register',
       component: Register
     },
     {
       path: '/login',
-      type: 'login',
       name: 'login',
       component: Login
     }
-    // {
-    //   path: '/about',
-    //   name: 'about',
-    //   // route level code-splitting
-    //   // this generates a separate chunk (about.[hash].js) for this route
-    //   // which is lazy-loaded when the route is visited.
-    //   component: () => import(/* webpackChunkName: "about" */ './views/About.vue')
-    // }
   ]
 })

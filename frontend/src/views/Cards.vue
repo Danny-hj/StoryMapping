@@ -4,32 +4,35 @@
     </div>
     <div id="pic" ref="pic">
       <div style="text-align:left">
-        <el-button icon="el-icon-plus" @click="addCard(1, 1)" v-if="cards.length === 0" circle></el-button>
+        <el-button @click="addCard(1, 1)" v-if="cards.length === 0" circle><el-icon><Plus /></el-icon></el-button>
       </div>
 
       <div v-for="h in map_height" :key="h" :style="{'width': map_width * card_width + 'px', 'height': card_width + 'px' }">
-        <draggable v-model="card_table[h]" @end="dropCard">
-          <div v-for="(item, index) in card_table[h]" :key="index" style="float: left">
-            <el-card class="box-card" shadow="hover" v-if="item != null" v-bind:class="{ highlightcard : isHighlight(item.cardId), 'card-activity' : h === 1, 'card-task' : h === 2, 'card-story' : h >= 3 }">
-              <div slot="header" class="clearfix">
-                <span>{{item.title}}</span>
-                <!--<span style="float: right" v-if="h > 2">{{getCard(h,w).state}}</span>-->
+        <draggable :list="card_table[h]" :item-key="cardItemKey" @end="dropCard">
+          <template #item="{ element, index }">
+          <div style="float: left">
+            <el-card class="box-card" shadow="hover" v-if="element && !element.empty" v-bind:class="{ highlightcard : isHighlight(element.cardId), 'card-activity' : h === 1, 'card-task' : h === 2, 'card-story' : h >= 3 }">
+              <template #header>
+              <div class="clearfix">
+                <span>{{element.title}}</span>
                 <span style="float: right" v-if="h === 1">
-                  <el-button icon="el-icon-myicon-user" size="mini" @click="initCardRoles(h, index+1)" circle></el-button>
+                  <el-button size="small" @click="initCardRoles(h, index+1)" circle><i class="el-icon-myicon-user"></i></el-button>
                 </span>
               </div>
-              <div class="text item">{{item.content}}</div>
+              </template>
+              <div class="text item">{{element.content}}</div>
             </el-card>
-            <div class="operation-btns" v-if="item != null" >
-              <el-button class="card-button" icon="el-icon-delete" @click="deleteCard(h, index+1)" size="mini" circle></el-button>
-              <el-button class="card-button" icon="el-icon-arrow-right" @click="addCard(h, index+1)" v-if="h <= 2" size="mini" circle></el-button>
-              <el-button class="card-button" icon="el-icon-edit" @click="editCard(h, index+1)" size="mini" circle></el-button>
-              <el-button class="card-button" icon="el-icon-arrow-down" @click="addChildCard(h, index+1)" size="mini" circle></el-button>
+            <div class="operation-btns" v-if="element && !element.empty" >
+              <el-button class="card-button" @click="deleteCard(h, index+1)" size="small" circle><el-icon><Delete /></el-icon></el-button>
+              <el-button class="card-button" @click="addCard(h, index+1)" v-if="h <= 2" size="small" circle><el-icon><ArrowRight /></el-icon></el-button>
+              <el-button class="card-button" @click="editCard(h, index+1)" size="small" circle><el-icon><Edit /></el-icon></el-button>
+              <el-button class="card-button" @click="addChildCard(h, index+1)" size="small" circle><el-icon><ArrowDown /></el-icon></el-button>
             </div>
-            <el-card class="box-card" shadow="hover" v-if="item == null">
+            <el-card class="box-card" shadow="hover" v-if="!element || element.empty">
               <div class="text item"></div>
             </el-card>
           </div>
+          </template>
         </draggable>
       </div>
       <!--<div v-for="h in map_height" :key="h" :style="{'width': map_width * card_width + 'px', 'height': card_width + 'px' }">-->
@@ -41,16 +44,16 @@
                 <!--<span>{{getCard(h,w).title}}</span>-->
                 <!--&lt;!&ndash;<span style="float: right" v-if="h > 2">{{getCard(h,w).state}}</span>&ndash;&gt;-->
                 <!--<span style="float: right" v-if="h === 1">-->
-                  <!--<el-button icon="el-icon-myicon-user" size="mini" @click="initCardRoles(h,w)" circle></el-button>-->
+                  <!--<el-button icon="el-icon-myicon-user" size="small" @click="initCardRoles(h,w)" circle></el-button>-->
                 <!--</span>-->
               <!--</div>-->
               <!--<div class="text item">{{getCard(h,w).content}}</div>-->
             <!--</el-card>-->
               <!--<div class="operation-btns" v-if="getCard(h,w) != null" >-->
-              <!--<el-button class="card-button" icon="el-icon-delete" @click="deleteCard(h, w)" size="mini" circle></el-button>-->
-              <!--<el-button class="card-button" icon="el-icon-arrow-right" @click="addCard(h, w)" v-if="h <= 2" size="mini" circle></el-button>-->
-              <!--<el-button class="card-button" icon="el-icon-edit" @click="editCard(h, w)" size="mini" circle></el-button>-->
-              <!--<el-button class="card-button" icon="el-icon-arrow-down" @click="addChildCard(h, w)" size="mini" circle></el-button>-->
+              <!--<el-button class="card-button" icon="el-icon-delete" @click="deleteCard(h, w)" size="small" circle></el-button>-->
+              <!--<el-button class="card-button" icon="el-icon-arrow-right" @click="addCard(h, w)" v-if="h <= 2" size="small" circle></el-button>-->
+              <!--<el-button class="card-button" icon="el-icon-edit" @click="editCard(h, w)" size="small" circle></el-button>-->
+              <!--<el-button class="card-button" icon="el-icon-arrow-down" @click="addChildCard(h, w)" size="small" circle></el-button>-->
             <!--</div>-->
               <!--<el-card class="box-card" shadow="hover" v-if="getCard(h,w) == null">-->
               <!--<div class="text item"></div>-->
@@ -61,21 +64,23 @@
         <!--</draggable>-->
       <!--</div>-->
     </div>
-    <!--<el-button icon="el-icon-delete" @click="test()" size="mini" circle></el-button>-->
+    <!--<el-button icon="el-icon-delete" @click="test()" size="small" circle></el-button>-->
     <!--<div style="width: 200px" id="test">-->
     <!--test-->
     <!--</div>-->
-    <el-dialog title="修改角色" :visible.sync="dialogRoleVisible" @close="editCardRoles()">
+    <el-dialog title="修改角色" v-model="dialogRoleVisible" @close="editCardRoles()">
       <span><el-transfer v-model="addedRoleIds" :titles="['所有角色', '相关角色']" :data="allRoles"></el-transfer></span>
     </el-dialog>
-    <el-dialog title="删除确认" :visible.sync="dialogVisible" width="30%">
+    <el-dialog title="删除确认" v-model="dialogVisible" width="30%">
       <span>这会删除所有子卡片，继续吗？</span>
-      <span slot="footer" class="dialog-footer">
+      <template #footer>
+      <span class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="confirmDelete()">确 定</el-button>
       </span>
+      </template>
     </el-dialog>
-    <el-dialog title="新建卡片" :visible.sync="dialogFormVisible">
+    <el-dialog title="新建卡片" v-model="dialogFormVisible">
       <el-form :model="addform">
         <el-form-item label="卡片名称" :label-width="formLabelWidth">
           <el-input v-model="addform.name" autocomplete="off"></el-input>
@@ -91,12 +96,14 @@
           <!--</el-select>-->
         <!--</el-form-item>-->
       </el-form>
-      <div slot="footer" class="dialog-footer">
+      <template #footer>
+      <div class="dialog-footer">
         <el-button @click="dialogFormVisible = false">取 消</el-button>
         <el-button type="primary" @click="confirmAdd()">确 定</el-button>
       </div>
+      </template>
     </el-dialog>
-    <el-dialog title="编辑卡片" :visible.sync="dialogEditFormVisible" @close="confirmEdit()">
+    <el-dialog title="编辑卡片" v-model="dialogEditFormVisible" @close="confirmEdit()">
       <el-form :model="editform">
         <el-form-item label="卡片名称" :label-width="formLabelWidth">
           <el-input v-model="editform.name" autocomplete="off"></el-input>
@@ -112,10 +119,12 @@
           <!--</el-select>-->
         <!--</el-form-item>-->
       </el-form>
-      <div slot="footer" class="dialog-footer">
+      <template #footer>
+      <div class="dialog-footer">
         <el-button @click="dialogEditFormVisible = false">取 消</el-button>
         <el-button type="primary" @click="confirmEdit()">确 定</el-button>
       </div>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -127,9 +136,9 @@ import html2canvas from 'html2canvas'
 import draggable from 'vuedraggable'
 
 export default {
-    components: {
-      draggable,
-    },
+  components: {
+    draggable
+  },
   data () {
     return {
       fromWhere: '',
@@ -164,8 +173,8 @@ export default {
       },
       formLabelWidth: '120px',
       card_width: 200,
-      map_width: '',
-      map_height: '',
+      map_width: 0,
+      map_height: 0,
       cards: [
 
       ],
@@ -174,13 +183,13 @@ export default {
       ],
       tasks: [
         {
-          card: "",
+          card: '',
           activities: [
             {
-              card: "",
+              card: '',
               stories: [
                 {
-                  card: ""
+                  card: ''
                 }
               ]
             }
@@ -279,7 +288,7 @@ export default {
       }
       return null
     },
-    isXYCard(x, y, item) {
+    isXYCard (x, y, item) {
       return this.cards[item].positionX === x && this.cards[item].positionY === y
     },
     initStoryMap () {
@@ -307,7 +316,6 @@ export default {
           this.mapRoles = roles
         }
       })
-
     },
     addChildCard (x, y) {
       this.dialogFormVisible = true
@@ -414,12 +422,18 @@ export default {
       })
       console.log(this.editform.x)
     },
+    cardItemKey (element) {
+      if (!element || element.empty) {
+        return element && element.key ? element.key : 'empty'
+      }
+      return 'c' + element.cardId
+    },
     dropCard (evt) {
       let allCards = []
       for (let i = 1; i < this.map_height + 1; i++) {
         for (let j = 0; j < this.map_width; j++) {
           let newCard = this.card_table[i][j]
-          if (newCard != null) {
+          if (newCard != null && !newCard.empty) {
             if (newCard.positionY !== j + 1) {
               newCard.positionX = i
               newCard.positionY = j + 1
@@ -440,7 +454,7 @@ export default {
 
       for (let i = 0; i < this.map_height + 1; i++) {
         for (let j = 0; j < this.map_width; j++) {
-          this.card_table[i][j] = null
+          this.card_table[i][j] = { empty: true, key: i + '-' + j }
         }
       }
 
@@ -470,15 +484,20 @@ export default {
 
   mounted () {
     this.initStoryMap()
-    eventBus.$on('searchWords', (message) => {
+    eventBus.on('searchWords', (message) => {
       this.searchWord = message
     })
-    eventBus.$on('updateRole', (message) => {
+    eventBus.on('updateRole', (message) => {
       this.initStoryMap()
     })
-    eventBus.$on('getImage', (message) => {
+    eventBus.on('getImage', (message) => {
       this.getImage()
     })
+  },
+  beforeUnmount () {
+    eventBus.off('searchWords')
+    eventBus.off('updateRole')
+    eventBus.off('getImage')
   }
 }
 </script>

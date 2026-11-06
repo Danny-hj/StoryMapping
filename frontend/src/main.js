@@ -1,46 +1,20 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import mitt from 'mitt'
 import App from './App.vue'
 import router from './router'
-import './plugins/element.js'
 import './plugins/iconfont.css'
 import '@/assets/css/story-style.css'
 
-Vue.config.productionTip = false
-export const eventBus = new Vue()
+export const eventBus = mitt()
 
-Vue.component('remote-script', {
-  render: function (createElement) {
-    let self = this
-    return createElement('script', {
-      attrs: {
-        type: 'text/javascript',
-        src: this.src
-      },
-      on: {
-        load: function (event) {
-          self.$emit('load', event)
-        },
-        error: function (event) {
-          self.$emit('error', event)
-        },
-        readystatechange: function (event) {
-          if (this.readyState === 'complete') {
-            self.$emit('load', event)
-          }
-        }
-      }
-    })
-  },
-
-  props: {
-    src: {
-      type: String,
-      required: true
-    }
-  }
-})
-
-new Vue({
-  router,
-  render: h => h(App)
-}).$mount('#app')
+const app = createApp(App)
+for (const [name, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(name, component)
+}
+app.use(router)
+app.use(ElementPlus, { locale: zhCn })
+app.mount('#app')

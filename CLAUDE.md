@@ -4,35 +4,35 @@
 
 ## 项目概述
 
-StoryMapping 是基于 Spring Boot 2.1.1 和 Vue.js 2.5 的故事地图应用，前后端分离。用户可以注册登录、创建故事地图、编排卡片、管理角色和协作者，并把地图导出为 Excel。
+StoryMapping 是基于 Spring Boot 3.5 和 Vue 3 的故事地图应用，前后端分离。用户可以注册登录、创建故事地图、编排卡片、管理角色和协作者，并把地图导出为 Excel。
 
-本仓库 fork 自 [xiaoluomati/StoryMapping](https://github.com/xiaoluomati/StoryMapping)。当前默认数据库是内嵌 H2，用来在没有外部数据库时本地运行和测试。
+本仓库 fork 自 [xiaoluomati/StoryMapping](https://github.com/xiaoluomati/StoryMapping)。本地默认使用文件型 H2。测试 profile 使用另一套内存 H2。
 
 ## 技术栈
 
 ### 后端
 
-- Java 8（`pom.xml` 中 `java.version` 为 1.8）
-- Spring Boot 2.1.1.RELEASE
-- Spring Data JPA
+- Java 21（`pom.xml` 中 `java.version` 为 21）
+- Spring Boot 3.5
+- Spring Data JPA（Jakarta Persistence）
 - H2（当前数据源）
-- Apache POI 3.16（Excel 导出）
+- Apache POI 5（Excel 导出）
 
-`pom.xml` 仍声明了 MySQL 驱动。生效配置在 `src/main/resources/application.properties`，数据源是 H2。
+`pom.xml` 仍声明了 MySQL 驱动，给 `prod` 或环境变量覆盖使用。默认数据源在 `src/main/resources/application.properties`，`application-prod.properties` 覆盖部署配置。
 
 ### 前端
 
-- Vue.js 2.5.21
-- Element UI 2.4.5
-- Vue Router 3.0.1
+- Vue 3
+- Element Plus
+- Vue Router 4
+- Vite
 - Axios
-- Sass（Dart Sass）与 Less
 
-`package.json` 依赖了 Vuex 3。`frontend/src` 下没有 store，页面状态写在组件里。样式编译使用 `sass`（Dart Sass）。
+页面状态写在组件里，没有 Vuex / Pinia。
 
 ## 本地运行
 
-使用 JDK 8 与 Maven 3。Spring Boot 2.1.1 面向 Java 8。
+使用 JDK 21 与 Maven 3。
 
 ### 后端
 
@@ -50,7 +50,7 @@ mvn clean
 
 ### 前端
 
-代码在 `frontend/`，构建工具是 Vue CLI 3。开发服务器端口是 `3000`，写在 `frontend/vue.config.js` 的 `devServer.port`。
+代码在 `frontend/`，构建工具是 Vite。开发服务器端口是 `3000`，写在 `frontend/vite.config.js`。
 
 ```bash
 cd frontend
@@ -61,31 +61,27 @@ npm run lint
 npm run mock
 ```
 
-`npm run mock` 用 json-server 监视 `frontend/src/mock/db.json`，端口 `8090`。`npm run mockdev` 会再调用仓库中不存在的 `npm run dev`，本地开发请使用 `npm run serve`。`package.json` 没有 `test` 脚本。
+`npm run mock` 用 json-server 监视 `frontend/src/mock/db.json`，端口 `8090`。`npm run mockdev` 会同时启动 mock 和 `npm run serve`。`package.json` 没有 `test` 脚本。
 
 开发代理把浏览器的 `/api` 转到 `http://localhost:8888/`，并去掉 `/api` 前缀。`frontend/src/api/api.js` 的基地址是 `api/`，因此页面请求 `/api/user/login` 到达后端时路径是 `/user/login`。
 
 ## 数据库
 
-主配置使用 H2 内存库：
+默认配置（`application.properties`）：
 
-- JDBC URL：`jdbc:h2:mem:storymap`
+- JDBC URL：`jdbc:h2:file:./data/storymap`（从仓库根目录启动）
 - 方言：`org.hibernate.dialect.H2Dialect`
-- `spring.jpa.hibernate.ddl-auto=create-drop`：进程结束时表和数据删除，下次启动是空库
-- H2 控制台路径：`/h2-console`（`http://localhost:8888/h2-console`）
-- `spring.h2.console.settings.web-allow-others=true`，只适合本机开发
+- `spring.jpa.hibernate.ddl-auto=update`：重启后保留数据
+- H2 控制台路径：`/h2-console`，`web-allow-others=false`，仅本机可连
+- `./data/` 被 git 忽略
 
-控制台使用的账号与 `application.properties` 里的数据源配置相同。不要把外部数据库的地址、账号或口令写入仓库或文档。
+`prod` 关闭 H2 控制台，数据源由环境变量提供，`ddl-auto` 默认为 `validate`。
 
-改用外部数据库时，用环境变量覆盖（优先级高于 `application.properties`），并把 JPA 方言改成该数据库的方言：
+不要把外部数据库的地址、账号或口令写入仓库或文档。环境变量优先级高于配置文件，见根目录 [README.md](README.md)。
 
-```bash
-export SPRING_DATASOURCE_URL='jdbc:mysql://<host>:<port>/<database>'
-export SPRING_DATASOURCE_USERNAME='<username>'
-export SPRING_DATASOURCE_PASSWORD='<password>'
-```
+测试使用 `src/test/resources/application-test.properties`，由 `@ActiveProfiles("test")` 加载，覆盖为内存库。详见 [docs/testing.md](docs/testing.md)。
 
-测试使用另一个配置：`src/test/resources/application-test.properties`，由 `@ActiveProfiles("test")` 加载。详见 [docs/testing.md](docs/testing.md)。
+用户密码以 BCrypt 存储。`UserService` 返回的 `UserVo` 不带密码。`User.name` 有唯一约束，重复注册返回 `0`。表名是 `app_user`。故事地图和卡片的业务 id 在保存时分配，因为它们不是单独的主键，Hibernate 不会为它们生成值。
 
 ## 项目架构
 
@@ -120,7 +116,7 @@ frontend/src/
 
 ## 实体
 
-- **User**：`id`、`name`、`password`、`nickname`、`email`
+- **User**：表 `app_user`，字段 `id`、`name`、`password`、`nickname`、`email`
 - **StoryMap**：表 `story_map`，复合主键 `storyName` + `userId`（`@IdClass(StoryMapKey.class)`）
 - **Card**：表 `card`。实体上的 `@Id` 字段是 `positionX`、`positionY`、`storyId`、`cardId`，`@IdClass` 为 `CardKey`。`CardKey` 目前只声明了 `positionX`、`positionY`、`storyId`
 - **StoryRole**：`roleId`、`roleName`、`roleDetail`、`storyId`

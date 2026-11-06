@@ -16,9 +16,8 @@ npm run build
 ```
 
 ### Run your tests
-```
-npm run test
-```
+
+This package does not define a `test` script. Backend tests are documented in [`docs/testing.md`](../docs/testing.md).
 
 ### Lints and fixes files
 ```

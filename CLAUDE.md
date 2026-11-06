@@ -1,156 +1,198 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件说明 StoryMapping 的架构、本地运行方式和开发约定，供后续开发时与当前代码对照。启动步骤的简版见根目录 [README.md](README.md)，测试见 [docs/testing.md](docs/testing.md)。
 
 ## 项目概述
 
-StoryMapping 是一个基于 Spring Boot 2.1.1 和 Vue.js 2.5 的故事地图应用。该项目采用前后端分离架构，支持用户创建和管理故事地图、卡片和角色协作。
+StoryMapping 是基于 Spring Boot 2.1.1 和 Vue.js 2.5 的故事地图应用，前后端分离。用户可以注册登录、创建故事地图、编排卡片、管理角色和协作者，并把地图导出为 Excel。
+
+本仓库 fork 自 [xiaoluomati/StoryMapping](https://github.com/xiaoluomati/StoryMapping)。当前默认数据库是内嵌 H2，用来在没有外部数据库时本地运行和测试。
 
 ## 技术栈
 
 ### 后端
-- Java 8 (JDK 1.8)
-- Spring Boot 2.1.1
+
+- Java 8（`pom.xml` 中 `java.version` 为 1.8）
+- Spring Boot 2.1.1.RELEASE
 - Spring Data JPA
-- MySQL 5.x
-- Apache POI (Excel 导出功能)
+- H2（当前数据源）
+- Apache POI 3.16（Excel 导出）
+
+`pom.xml` 仍声明了 MySQL 驱动。生效配置在 `src/main/resources/application.properties`，数据源是 H2。
 
 ### 前端
+
 - Vue.js 2.5.21
 - Element UI 2.4.5
 - Vue Router 3.0.1
-- Vuex 3.0.1
-- Axios (HTTP 客户端)
+- Axios
+- Sass（Dart Sass）与 Less
 
-## 开发环境配置
+`package.json` 依赖了 Vuex 3。`frontend/src` 下没有 store，页面状态写在组件里。样式编译使用 `sass`（Dart Sass）。
 
-### 后端开发
-- 项目使用 Maven 管理依赖
-- 默认运行端口: 9999
-- 数据库连接配置在 `src/main/resources/application.properties`
-- 支持热部署 (spring-boot-devtools)
+## 本地运行
 
-### 前端开发
-- 前端代码位于 `frontend/` 目录
-- 使用 Vue CLI 3.x 构建
-- 开发服务器默认端口: 8080
+使用 JDK 8 与 Maven 3。Spring Boot 2.1.1 面向 Java 8。
 
-## 常用命令
+### 后端
 
-### 后端命令
+- 入口类：`cn.nju.edu.StoryMapApplication`
+- 默认端口：`8888`（`server.port`）
+- 热部署：`spring-boot-devtools` 已引入
+
 ```bash
-# 编译项目
 mvn compile
-
-# 运行项目
 mvn spring-boot:run
-
-# 运行测试
 mvn test
-
-# 打包项目
 mvn package
-
-# 清理项目
 mvn clean
 ```
 
-### 前端命令
+### 前端
+
+代码在 `frontend/`，构建工具是 Vue CLI 3。开发服务器端口是 `3000`，写在 `frontend/vue.config.js` 的 `devServer.port`。
+
 ```bash
-# 进入前端目录
 cd frontend
-
-# 安装依赖
 npm install
-
-# 启动开发服务器
 npm run serve
-
-# 构建生产版本
 npm run build
-
-# 代码检查和修复
 npm run lint
-
-# 启动 Mock 服务器
 npm run mock
 ```
 
+`npm run mock` 用 json-server 监视 `frontend/src/mock/db.json`，端口 `8090`。`npm run mockdev` 会再调用仓库中不存在的 `npm run dev`，本地开发请使用 `npm run serve`。`package.json` 没有 `test` 脚本。
+
+开发代理把浏览器的 `/api` 转到 `http://localhost:8888/`，并去掉 `/api` 前缀。`frontend/src/api/api.js` 的基地址是 `api/`，因此页面请求 `/api/user/login` 到达后端时路径是 `/user/login`。
+
+## 数据库
+
+主配置使用 H2 内存库：
+
+- JDBC URL：`jdbc:h2:mem:storymap`
+- 方言：`org.hibernate.dialect.H2Dialect`
+- `spring.jpa.hibernate.ddl-auto=create-drop`：进程结束时表和数据删除，下次启动是空库
+- H2 控制台路径：`/h2-console`（`http://localhost:8888/h2-console`）
+- `spring.h2.console.settings.web-allow-others=true`，只适合本机开发
+
+控制台使用的账号与 `application.properties` 里的数据源配置相同。不要把外部数据库的地址、账号或口令写入仓库或文档。
+
+改用外部数据库时，用环境变量覆盖（优先级高于 `application.properties`），并把 JPA 方言改成该数据库的方言：
+
+```bash
+export SPRING_DATASOURCE_URL='jdbc:mysql://<host>:<port>/<database>'
+export SPRING_DATASOURCE_USERNAME='<username>'
+export SPRING_DATASOURCE_PASSWORD='<password>'
+```
+
+测试使用另一个配置：`src/test/resources/application-test.properties`，由 `@ActiveProfiles("test")` 加载。详见 [docs/testing.md](docs/testing.md)。
+
 ## 项目架构
 
-### 后端架构
+### 后端
+
 ```
 src/main/java/cn/nju/edu/
-├── controller/          # REST API 控制器层
-├── service/            # 业务逻辑接口层
-├── serviceImpl/        # 业务逻辑实现层
-├── repository/         # JPA 数据访问层
-├── entity/             # JPA 实体类
-├── vo/                 # 值对象 (Value Objects)
-├── enumeration/        # 枚举类
-└── util/               # 工具类
+├── controller/     # REST 控制器
+├── service/        # 业务接口
+├── serviceImpl/    # 业务实现
+├── repository/     # Spring Data JPA
+├── entity/         # 实体
+├── vo/             # 入参与返回对象
+├── enumeration/    # 卡片状态、类型
+└── util/           # ExcelHelper
 ```
 
-### 前端架构
+### 前端
+
 ```
 frontend/src/
-├── api/                # API 调用模块
-├── components/         # Vue 组件
-├── views/              # 页面视图
-├── router.js           # 路由配置
-├── main.js             # 应用入口
-└── assets/             # 静态资源
+├── api/            # Axios 封装
+├── components/     # 顶栏、侧栏
+├── views/          # 页面
+├── mock/           # json-server 数据
+├── router.js
+├── main.js
+└── assets/
 ```
 
-## 核心功能模块
+主要页面路由：`/login`、`/register`、`/storymap-manager`、`/create`、`/search`、`/storymap/:storymapid`。`/` 会重定向到 `/storymap-manager`。
 
-### 实体关系
-- **User**: 用户管理
-- **StoryMap**: 故事地图 (使用复合主键: storyName + userId)
-- **Card**: 故事卡片 (使用复合主键: cardName + storyId + storyName)
-- **StoryRole**: 故事角色
-- **Relation**: 卡片关系
-- **Collaborator**: 协作者
+## 实体
 
-### API 端点
-- `/getStoryMapList`: 获取故事地图列表
-- `/addStoryMap`: 创建新故事地图
-- `/updateStoryMap`: 更新故事地图
-- `/addCollaborator`: 添加协作者
-- `/exportStoryMap`: 导出故事地图为 Excel
+- **User**：`id`、`name`、`password`、`nickname`、`email`
+- **StoryMap**：表 `story_map`，复合主键 `storyName` + `userId`（`@IdClass(StoryMapKey.class)`）
+- **Card**：表 `card`。实体上的 `@Id` 字段是 `positionX`、`positionY`、`storyId`、`cardId`，`@IdClass` 为 `CardKey`。`CardKey` 目前只声明了 `positionX`、`positionY`、`storyId`
+- **StoryRole**：`roleId`、`roleName`、`roleDetail`、`storyId`
+- **Relation**：`relationId`、`roleId`、`cardId`
+- **Collaborator**：`id`、`userId`、`storyId`
 
-## 数据库配置
+## API
 
-数据库使用 MySQL，默认配置:
-- 主机: 172.19.240.12:3306
-- 数据库: storymap
-- 用户名: root
-- 密码: 123456
+控制器上的路径如下。开发环境里前端会在前面加 `/api`，由 devServer 代理去掉。
 
-## 开发注意事项
+### UserController（`/user`）
 
-### 后端开发
-1. 使用 JPA 进行数据访问，实体类使用 `@Entity` 和 `@Table` 注解
-2. 复合主键使用 `@IdClass` 注解配置
-3. 所有服务层使用 `@Service` 注解，控制器使用 `@RestController`
-4. 测试类使用 `@SpringBootTest` 和 `@Transactional` 注解
+| 方法 | 路径 |
+| --- | --- |
+| POST | `/user/register` |
+| POST | `/user/login` |
+| GET | `/user/{id}` |
+| PUT | `/user/{id}` |
+| PUT | `/user/password/{id}` |
+| GET | `/user/list` |
 
-### 前端开发
-1. 使用 Element UI 组件库构建界面
-2. API 调用统一使用 Axios
-3. 使用 Vue Router 进行路由管理
-4. 组件间通信可以使用 props、events 或 Vuex
+`UserService.getUserByNameAndPassword` 与 `addUser` 失败时返回 `0`，成功时返回用户 id。`getUserById` 在 id 不存在时用空的 `User` 组装返回对象。
+
+### StoryMapController
+
+| 方法 | 路径 |
+| --- | --- |
+| GET | `/getStoryMapList` |
+| POST | `/addStoryMap` |
+| POST | `/addCollaborator` |
+| POST | `/updateStoryMap` |
+| POST | `/deleteStoryMap` |
+| GET | `/exportExcel` |
+
+### CardController
+
+| 方法 | 路径 |
+| --- | --- |
+| GET | `/getCardList` |
+| POST | `/addCard/{source}` |
+| POST | `/udateCardList` |
+| POST | `/updateCard` |
+| POST | `/deleteCard` |
+
+批量更新路径在源码里是 `/udateCardList`。
+
+### StoryRoleController（`/storyRoles`）
+
+| 方法 | 路径 |
+| --- | --- |
+| GET | `/storyRoles/getStoryRoleList` |
+| POST | `/storyRoles/addStoryRole` |
+| DELETE | `/storyRoles/deleteStoryRole` |
+| PUT | `/storyRoles/updateStoryRole` |
+| GET | `/storyRoles/getRelationList` |
+| POST | `/storyRoles/addRelation` |
+| DELETE | `/storyRoles/deleteRelation` |
+
+## 开发约定
+
+1. 持久化使用 JPA。实体使用 `@Entity`、`@Table`，复合主键使用 `@IdClass`。
+2. 服务实现使用 `@Service`，控制器使用 `@RestController`。
+3. 前端界面使用 Element UI，HTTP 走 `frontend/src/api/` 里的 Axios 封装，路由在 `frontend/src/router.js`。
 
 ## 测试
 
-### 后端测试
-测试文件位于 `src/test/java/cn/nju/edu/` 目录下，使用 JUnit 4 进行单元测试。
+后端测试在 `src/test/java/cn/nju/edu/`，JUnit 4，分 Repository（`@DataJpaTest`）和 Service（`@SpringBootTest`）两类，都加了 `@ActiveProfiles("test")`。没有 Controller、Entity、Util 测试，也没有 Mockito / MockMvc。
 
-### 前端测试
-使用 `npm run test` 运行前端测试（需要配置测试框架）。
+说明、用例数量和运行方式见 [docs/testing.md](docs/testing.md)。
 
-## 构建和部署
+## 构建
 
-1. 后端构建: `mvn clean package`，生成的 JAR 文件位于 `target/` 目录
-2. 前端构建: `cd frontend && npm run build`，生成的静态文件位于 `frontend/dist/` 目录
-3. 部署时需要将前端构建产物放置到后端的静态资源目录或使用独立的服务器托管
+1. `mvn clean package` 生成 `target/storymap.jar`（`finalName` 为 `storymap`）。
+2. `cd frontend && npm run build` 生成 `frontend/dist/`。
+3. 前端产物需要单独托管，或放到后端静态资源目录。
